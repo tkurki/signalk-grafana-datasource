@@ -1,0 +1,82 @@
+{
+  "type": "datasource",
+  "name": "Signal K",
+  "id": "signalk-datasource",
+  "metrics": false,
+  "streaming": true,
+  "routes": [
+    {
+      "path": "historyapi",
+      "url": "http://{{ .JsonData.hostname }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "content": "Bearer {{ .SecureJsonData.token }}"
+        }
+      ]
+    },
+    {
+      "path": "shistoryapi",
+      "url": "https://{{ .JsonData.hostname }}/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "content": "Bearer {{ .SecureJsonData.token }}"
+        }
+      ]
+    },
+    {
+      "path": "noauthhistoryapi",
+      "url": "http://{{ .JsonData.hostname }}/"
+    },
+    {
+      "path": "snoauthhistoryapi",
+      "url": "https://{{ .JsonData.hostname }}/"
+    }
+  ],
+  "info": {
+    "description": "Signal K datasource for streaming realtime data over WebSocket and querying historical data via History API. The plugin is designed to work with the Signal K server and signalk-to-influxdb2 plugin.",
+    "author": {
+      "name": "teppo.kurki@iki.fi"
+    },
+    "keywords": ["datasource","signalk", "history", "streaming", "websocket"],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      {
+        "name": "Github",
+        "url": "https://github.com/tkurki/signalk-grafana"
+      },
+      {
+        "name": "Sponsor",
+        "url": "https://github.com/sponsors/tkurki"
+      }
+    ],
+    "screenshots": [
+      {
+        "path": "img/datasource_config.png",
+        "name": "Data Source Configuration"
+      },
+      {
+        "path": "img/paths.png",
+        "name": "Pick data by path"
+      },
+      {
+        "path": "img/queryeditor1.png",
+        "name": "Query Editor"
+      },
+      {
+        "path": "img/conversion.png",
+        "name": "Schema/unit aware conversions"
+      }
+    ],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=10.4.0",
+    "plugins": []
+  }
+}
