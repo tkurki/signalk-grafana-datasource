@@ -1,7 +1,7 @@
 {
   "type": "datasource",
   "name": "Signal K",
-  "id": "signalk-datasource",
+  "id": "tkurki-signalk-datasource",
   "metrics": false,
   "streaming": true,
   "routes": [

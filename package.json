@@ -1,5 +1,5 @@
 {
-  "name": "signalk-datasource",
+  "name": "tkurki-signalk-datasource",
   "version": "0.0.8",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
