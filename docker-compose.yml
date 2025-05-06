@@ -28,6 +28,8 @@ services:
      - "3001:3000"
     volumes:
      - "./dist:/var/lib/grafana/plugins/sk-datasource"
+     - "./provisioning/datasources:/etc/grafana/provisioning/datasources"
+     - "./provisioning/dashboards:/etc/grafana/provisioning/dashboards"
     depends_on:
      - influxdb
      - signalk
