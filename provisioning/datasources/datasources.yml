@@ -11,3 +11,4 @@ datasources:
     jsonData:
       hostname: signalk:3000
     secureJsonData:
+      token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwiaWF0IjoxNzQ2OTA3OTE5LCJleHAiOjIwNjI0ODM5MTl9.imTu7wPHUFeWkuOeIyxX8lg84rt_6B6Mtrre_BlLsP4
