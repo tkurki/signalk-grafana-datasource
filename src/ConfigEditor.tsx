@@ -1,11 +1,17 @@
-import { LegacyForms } from '@grafana/ui';
-const { FormField, Switch } = LegacyForms;
+import { InlineField, InlineSwitch, Input, SecretInput } from "@grafana/ui";
 
-import React, { PureComponent, ChangeEvent } from 'react';
-import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
-import { SecureSignalKDataSourceOptions, SignalKDataSourceOptions } from './types';
+import React, { PureComponent, ChangeEvent } from "react";
+import { DataSourcePluginOptionsEditorProps } from "@grafana/data";
+import {
+  SecureSignalKDataSourceOptions,
+  SignalKDataSourceOptions,
+} from "./types";
 
-interface Props extends DataSourcePluginOptionsEditorProps<SignalKDataSourceOptions, SecureSignalKDataSourceOptions> {}
+interface Props
+  extends DataSourcePluginOptionsEditorProps<
+    SignalKDataSourceOptions,
+    SecureSignalKDataSourceOptions
+  > {}
 
 interface State {}
 
@@ -26,7 +32,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
       ssl: !!event.target.checked,
     };
     onOptionsChange({ ...options, jsonData });
-  }
+  };
 
   onTokenChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
@@ -45,44 +51,93 @@ export class ConfigEditor extends PureComponent<Props, State> {
       useAuth: !!event.target.checked,
     };
     onOptionsChange({ ...options, jsonData });
-  }
+  };
 
+  onResetApiKey = () => {
+    const { onOptionsChange, options } = this.props;
+    onOptionsChange({
+      ...options,
+      secureJsonFields: {
+        ...options.secureJsonFields,
+        token: false,
+      },
+      secureJsonData: {
+        ...options.secureJsonData,
+        token: "",
+      },
+    });
+  };
 
   render() {
     const { options } = this.props;
-    const { jsonData, secureJsonData } = options;
+    const { jsonData, secureJsonData, secureJsonFields } = options;
 
     return (
-      <div className="gf-form-group">
-        <div className="gf-form">
-          <Switch
-            label='SSL'
+      <>
+        <InlineField label="Use SSL" labelWidth={26} interactive>
+          <InlineSwitch
+            width={26}
+            value={jsonData.ssl}
             onChange={this.onSSLChange}
-            checked={!!jsonData.ssl}
           />
-          <FormField
-            label="Server host:port"
-            labelWidth={10}
-            inputWidth={20}
+        </InlineField>
+
+        <InlineField label="Signal K Server" labelWidth={26} interactive>
+          <Input
+            id="config-editor-host-port "
             onChange={this.onHostnameChange}
-            value={jsonData.hostname || ''}
-            placeholder="Signal K server hostname/ip address"
+            value={jsonData.hostname ?? ""}
+            placeholder="localhost:3000"
+            width={40}
           />
-          <Switch
-            label='Use Authentication'
+        </InlineField>
+
+        <InlineField
+          label="Use Authentication"
+          labelWidth={26}
+          interactive
+          tooltip={
+            "Authentication token if you have security enabled on your Signal K server"
+          }
+        >
+          <InlineSwitch
+            label="Use authentication"
+            width={26}
+            value={jsonData.useAuth}
             onChange={this.onUseAuthChange}
-            checked={!!jsonData.useAuth}
           />
-          <FormField
-            label="Authentication Token"
-            labelWidth={10}
-            inputWidth={20}
+        </InlineField>
+
+        <InlineField
+          label="Authentication Token"
+          labelWidth={26}
+          disabled={!jsonData.useAuth}
+          interactive
+          tooltip={
+            <span>
+              <a
+                href="https://demo.signalk.io/documentation/setup/generating_tokens.html?highlight=token#generate-token"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                CLICK HERE for more token instructions
+              </a>
+            </span>
+          }
+        >
+          <SecretInput
+            required={jsonData.useAuth}
+            disabled={!jsonData.useAuth}
+            id="config-editor-api-key"
+            isConfigured={secureJsonFields?.token}
+            value={secureJsonData?.token ?? ""}
+            placeholder="Signal K Server API key"
+            width={40}
+            onReset={this.onResetApiKey}
             onChange={this.onTokenChange}
-            value={secureJsonData?.token ?? ''}
-            placeholder="Access token"
           />
-        </div>
-      </div>
+        </InlineField>
+      </>
     );
   }
 }
