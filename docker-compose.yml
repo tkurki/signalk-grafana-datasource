@@ -39,3 +39,6 @@ services:
     - GF_LOG_FILTERS=plugin.tkurki-signalk-datasource:debug
     - GF_LOG_LEVEL=debug
     - GF_DATAPROXY_LOGGING=1
+    - GF_AUTH_ANONYMOUS_ENABLED=true
+    - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    - GF_AUTH_ANONYMOUS_ORG=1
