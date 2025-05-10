@@ -34,8 +34,8 @@ services:
      - influxdb
      - signalk
     environment:
-    - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=signalk-datasource
+    - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=tkurki-signalk-datasource
     - NODE_ENV=development
-    - GF_LOG_FILTERS=plugin.signalk-datasource:debug
+    - GF_LOG_FILTERS=plugin.tkurki-signalk-datasource:debug
     - GF_LOG_LEVEL=debug
     - GF_DATAPROXY_LOGGING=1
