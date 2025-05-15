@@ -110,12 +110,14 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
     const result = new Observable<DataQueryResponse>((subscriber) => {
       let lastStreamingValueTimestamp = 0;
 
+      const enabledTargets = options.targets.filter(target => !target.hide);
+
       const dataframe = new CircularDataFrame({
         append: 'tail',
         capacity: 1000,
       });
       dataframe.addField({ name: 'time', type: FieldType.time });
-      options.targets.map((target) => {
+      enabledTargets.forEach((target) => {
         dataframe.addField({ name: `${target.path}:${target.aggregate}`, type: FieldType.number });
       });
 
@@ -123,16 +125,16 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
         lastStreamingValueTimestamp = Date.now();
         subscriber.next({
           data: [dataframe],
-          key: options.targets[0].refId,
+          key: enabledTargets[0]?.refId,
           state: LoadingState.Streaming,
         });
       };
 
       this.pathValueHandlers = !rangeIsUptoNow(options.rangeRaw)
         ? []
-        : options.targets.map((target, i) => pathValueHandler(target, dataframe, i, onDataInserted));
+        : enabledTargets.map((target, i) => pathValueHandler(target, dataframe, i, onDataInserted));
 
-      if (rangeIsUptoNow(options.rangeRaw) && options.targets.length > 0) {
+      if (rangeIsUptoNow(options.rangeRaw)) {
         this.ensureWsIsOpen();
 
         //if there are no updates advance the time with timer
@@ -146,7 +148,12 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
         }, options.intervalMs) as unknown as number;
       }
 
-      this.doQuery(options, dataframe, subscriber);
+      subscriber.next({
+        data: [dataframe],
+        key: options.targets[0].refId,
+      });
+
+      this.doQuery(enabledTargets, options.range, options.intervalMs, dataframe, subscriber);
     });
     return onFirstLastSubscribers(
       result,
@@ -156,20 +163,21 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
   }
 
   async doQuery(
-    options: DataQueryRequest<SignalKQuery>,
+    enabledTargets: SignalKQuery[],
+    range: TimeRange, intervalMs: number,
     dataframe: CircularDataFrame,
     subscriber: Subscriber<DataQueryResponse>
   ) {
     //https://community.grafana.com/t/how-to-migrate-from-backendsrv-datasourcerequest-to-backendsrv-fetch/58770
     const observableResponse = getBackendSrv().fetch({
-      url: this.getHistoryUrl(options),
+      url: this.getHistoryUrl(enabledTargets, range, intervalMs),
     });
     lastValueFrom(observableResponse)
       .then((response) => {
         return response.data as unknown as HistoryResult;
       })
       .then((result: HistoryResult) => {
-        const seriesConversions = options.targets.map(getConversion);
+        const seriesConversions = enabledTargets.map(getConversion);
         if (result) {
           result.data.forEach((row: number[]) => {
             const rowToInsert = row.slice(1).map((value, i) => seriesConversions[i](value));
@@ -179,9 +187,12 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
           });
           subscriber.next({
             data: [dataframe],
-            key: options.targets[0].refId,
+            key: enabledTargets[0].refId,
           });
         }
+      })
+      .catch((err) => {
+        console.error(err);
       });
   }
 
@@ -189,18 +200,18 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
     return `${this.url}/${this.getProxyName()}/signalk/v1/history/values?`;
   }
 
-  getHistoryUrl(options: DataQueryRequest<SignalKQuery>) {
-    const paths = options.targets.map((target) => `${target.path}:${target.aggregate || 'average'}`).join(',');
-    if (!options.range || !options.range.from || !options.range.to || !options.intervalMs) {
+  getHistoryUrl(enabledTargets: SignalKQuery[], range: TimeRange, intervalMs: number) {
+    const paths = enabledTargets.map((target) => `${target.path}:${target.aggregate || 'average'}`).join(',');
+    if (!range || !range.from || !range.to || !intervalMs) {
       throw new Error('Valid range and intervalMs required');
     }
     const queryParams: { [k: string]: string } = {
       //FIXME what if targets have different contexts
-      context: options.targets[0].context || 'vessels.self',
+      context: enabledTargets[0]?.context || 'vessels.self',
       paths,
-      from: options.range.from.toISOString(),
-      to: options.range.to.toISOString(),
-      resolution: (options.intervalMs / 1000).toString(),
+      from: range.from.toISOString(),
+      to: range.to.toISOString(),
+      resolution: (intervalMs / 1000).toString(),
     };
     return urlWithQueryParams(this.getHistoryUrlBase(), queryParams);
   }
