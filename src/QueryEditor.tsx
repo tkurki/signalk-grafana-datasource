@@ -153,7 +153,7 @@ export class QueryEditor extends PureComponent<Props, State> {
               width={80}
             />
           </InlineField>
-          <InlineField labelWidth={14} label="$source">
+          <InlineField labelWidth={14} label="Source Id ($source)">
             <Input
               width={12}
               name={'$source'}
