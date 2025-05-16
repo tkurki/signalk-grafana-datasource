@@ -1,15 +1,14 @@
 # SignalK-Datasource
 
-![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.version&url=https://grafana.com/api/plugins/signalk-datasource&label=Marketplace&prefix=v&color=F47A20)
 ![License](https://img.shields.io/github/license/tkurki/signalk-grafana)
 
 ## Overview 
 
-This is a datasource for using Signal K data over
+This is a datasource for using [Signal K](https://signalk.org/) data over
 - streaming WebSocket connection for realtime data
 - the History HTTP API
 
-For streaming data you will need a Signal K server providing access to the data. To test the functionality you can connect to https://demo.signalk.org. Streaming data opens a connection to the Signal K server that update as new data is received when you have Grafana open. With just streaming data you can have an updating dashboard, but you can not scroll back in time and all updates happening when the Grafana window is not active won't be shown.
+For streaming data you will need a [Signal K server](https://github.com/SignalK/signalk-server) providing access to the data. To test the functionality you can connect to https://demo.signalk.org. Streaming data opens a connection to the Signal K server that update as new data is received when you have Grafana open. With just streaming data you can have an updating dashboard, but you can not scroll back in time and all updates happening when the Grafana window is not active won't be shown.
 
 For access to history data you will need a database where the data is stored and access to the data via Signal K server. This is provided by the [signalk-to-influxdb2 plugin](https://github.com/tkurki/signalk-to-influxdb2). The plugin stores the data in an InfluxDb v2 database and implements a History API that the datasource accesses.
 
