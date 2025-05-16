@@ -16,6 +16,7 @@
         "writeOptions": {
           "defaultTags": {},
           "headers": {},
+          "flushInterval": 500,
           "writeRetrySkipped": {}
         }
       }
