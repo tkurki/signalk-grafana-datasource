@@ -1,0 +1,40 @@
+version: '2'
+services:
+  influxdb:
+    image: "influxdb:2.7.10"
+    ports:
+     - "8086:8086"
+    volumes:
+     - "./docker-compose-config/data:/var/lib/influxdb2"
+    environment:
+     - DOCKER_INFLUXDB_INIT_MODE=setup
+     - DOCKER_INFLUXDB_INIT_USERNAME=signalk
+     - DOCKER_INFLUXDB_INIT_PASSWORD=klangisklangis
+     - DOCKER_INFLUXDB_INIT_ORG=signalk_org
+     - DOCKER_INFLUXDB_INIT_BUCKET=signalk_bucket
+     - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=signalk_token
+  signalk:
+    image: "signalk/signalk-server:latest"
+    ports:
+     - "3001:3000"
+    volumes:
+     - "./docker-compose-config/dotsignalk:/home/node/.signalk"
+    entrypoint: /home/node/.signalk/start.sh
+    depends_on:
+      - influxdb
+  grafana:
+    image: "grafana/grafana:11.2.1"
+    ports:
+     - "3000:3000"
+    volumes:
+     - "./provisioning/datasources:/etc/grafana/provisioning/datasources"
+     - "./provisioning/dashboards:/etc/grafana/provisioning/dashboards"
+    depends_on:
+     - influxdb
+     - signalk
+    environment:
+    - GF_INSTALL_PLUGINS=tkurki-signalk-datasource
+    - GF_LOG_FILTERS=plugin.tkurki-signalk-datasource:debug
+    - GF_AUTH_ANONYMOUS_ENABLED=true
+    - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    - GF_AUTH_ANONYMOUS_ORG=1
