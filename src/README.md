@@ -1,5 +1,6 @@
 # SignalK-Datasource
 
+![Marketplace Badge](https://img.shields.io/badge/dynamic/json?logo=grafana&query=$.version&url=https://grafana.com/api/plugins/tkurki-signalk-datasource&label=Marketplace&prefix=v&color=F47A20)
 ![License](https://img.shields.io/github/license/tkurki/signalk-grafana)
 
 ## Overview 
