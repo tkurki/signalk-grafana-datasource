@@ -118,7 +118,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
       });
       dataframe.addField({ name: 'time', type: FieldType.time });
       enabledTargets.forEach((target) => {
-        dataframe.addField({ name: `${target.path}:${target.aggregate}`, type: FieldType.number });
+        dataframe.addField({ name: `${target.path}:${target.aggregate || 'average'}`, type: FieldType.number });
       });
 
       const onDataInserted = () => {
