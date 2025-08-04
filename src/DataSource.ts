@@ -11,7 +11,7 @@ import {
 } from '@grafana/data';
 
 import { SignalKQuery, SignalKDataSourceOptions } from './types';
-import { Observable, Subscriber, lastValueFrom } from 'rxjs';
+import { Observable, Subject, Subscriber, lastValueFrom } from 'rxjs';
 import ReconnectingWebsocket from './reconnecting-websocket';
 import { PathWithMeta } from 'QueryEditor';
 import { getConverter } from 'conversions';
@@ -107,54 +107,54 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
       this.idleInterval = undefined;
     }
 
-    const result = new Observable<DataQueryResponse>((subscriber) => {
-      let lastStreamingValueTimestamp = 0;
+    const result = new Subject<DataQueryResponse>();
+    let lastStreamingValueTimestamp = 0;
 
-      const enabledTargets = options.targets.filter(target => !target.hide);
+    const enabledTargets = options.targets.filter(target => !target.hide);
 
-      const dataframe = new CircularDataFrame({
-        append: 'tail',
-        capacity: 1000,
-      });
-      dataframe.addField({ name: 'time', type: FieldType.time });
-      enabledTargets.forEach((target) => {
-        dataframe.addField({ name: `${target.path}:${target.aggregate || 'average'}`, type: FieldType.number });
-      });
-
-      const onDataInserted = () => {
-        lastStreamingValueTimestamp = Date.now();
-        subscriber.next({
-          data: [dataframe],
-          key: enabledTargets[0]?.refId,
-          state: LoadingState.Streaming,
-        });
-      };
-
-      this.pathValueHandlers = !rangeIsUptoNow(options.rangeRaw)
-        ? []
-        : enabledTargets.map((target, i) => pathValueHandler(target, dataframe, i, onDataInserted));
-
-      if (rangeIsUptoNow(options.rangeRaw)) {
-        this.ensureWsIsOpen();
-
-        //if there are no updates advance the time with timer
-        this.idleInterval = setInterval(() => {
-          if (Date.now() - lastStreamingValueTimestamp > options.intervalMs) {
-            subscriber.next({
-              data: [dataframe],
-              state: LoadingState.Streaming,
-            });
-          }
-        }, options.intervalMs) as unknown as number;
-      }
-
-      subscriber.next({
-        data: [dataframe],
-        key: options.targets[0].refId,
-      });
-
-      this.doQuery(enabledTargets, options.range, options.intervalMs, dataframe, subscriber);
+    const dataframe = new CircularDataFrame({
+      append: 'tail',
+      capacity: 1000,
     });
+    dataframe.addField({ name: 'time', type: FieldType.time });
+    enabledTargets.forEach((target) => {
+      dataframe.addField({ name: `${target.path}:${target.aggregate || 'average'}`, type: FieldType.number });
+    });
+
+    const onDataInserted = () => {
+      lastStreamingValueTimestamp = Date.now();
+      result.next({
+        data: [dataframe],
+        key: enabledTargets[0]?.refId,
+        state: LoadingState.Streaming,
+      });
+    };
+
+    this.pathValueHandlers = !rangeIsUptoNow(options.rangeRaw)
+      ? []
+      : enabledTargets.map((target, i) => pathValueHandler(target, dataframe, i, onDataInserted));
+
+    if (rangeIsUptoNow(options.rangeRaw)) {
+      this.ensureWsIsOpen();
+
+      //if there are no updates advance the time with timer
+      this.idleInterval = setInterval(() => {
+        if (Date.now() - lastStreamingValueTimestamp > options.intervalMs) {
+          result.next({
+            data: [dataframe],
+            state: LoadingState.Streaming,
+          });
+        }
+      }, options.intervalMs) as unknown as number;
+    }
+
+    result.next({
+      data: [dataframe],
+      key: options.targets[0].refId,
+    });
+
+    this.doQuery(enabledTargets, options.range, options.intervalMs, dataframe, result);
+
     return onFirstLastSubscribers(
       result,
       () => this.ensureWsIsOpen(),
@@ -166,7 +166,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
     enabledTargets: SignalKQuery[],
     range: TimeRange, intervalMs: number,
     dataframe: CircularDataFrame,
-    subscriber: Subscriber<DataQueryResponse>
+    resultSubject: Subject<DataQueryResponse>
   ) {
     //https://community.grafana.com/t/how-to-migrate-from-backendsrv-datasourcerequest-to-backendsrv-fetch/58770
     const observableResponse = getBackendSrv().fetch({
@@ -185,7 +185,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
             (rowToInsert as any[]).unshift(ts);
             dataframe.appendRow(rowToInsert);
           });
-          subscriber.next({
+          resultSubject.next({
             data: [dataframe],
             key: enabledTargets[0].refId,
           });
@@ -386,8 +386,8 @@ const pathValueHandler = (
   return (pathValue: PathValue, update: any) => {
     if (pathValue.path === path) {
       if (sourceMatcher(update)) {
-        const row = new Array<number | null>(data.fields.length);
-        row[0] = Date.now();
+        // eslint-disable-next-line @typescript-eslint/array-type
+        const row: [Date, ...(number | null)[]] = [new Date()]
         row[fieldIndex + 1] = conversion(pathValue.value);
         data.appendRow(row);
         onDataInserted();
