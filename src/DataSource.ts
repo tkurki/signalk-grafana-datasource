@@ -94,9 +94,8 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
   }
 
   getWebsocketUrl() {
-    return `ws${window.location.protocol === 'https' ? 's' : ''}://${window.location.host}${
-      this.url
-    }/${this.getProxyName()}/signalk/v1/stream`;
+    return `ws${window.location.protocol === 'https' ? 's' : ''}://${window.location.host}${this.url
+      }/${this.getProxyName()}/signalk/v1/stream`;
   }
 
   query(options: DataQueryRequest<SignalKQuery>): Observable<DataQueryResponse> {
