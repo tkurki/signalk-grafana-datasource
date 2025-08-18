@@ -1,0 +1,40 @@
+{
+  "paths": [
+    {
+      "path": "commands.captureMoored",
+      "name": "Command: captureMoored",
+      "enabled": true,
+      "regimen": "commands",
+      "context": "vessels.self"
+    },
+    {
+      "path": "navigation.position",
+      "name": "Navigation Position",
+      "enabled": true,
+      "regimen": "captureMoored",
+      "context": "vessels.self"
+    },
+    {
+      "path": "environment.wind.speedApparent",
+      "name": "Apparent Wind Speed",
+      "enabled": true,
+      "regimen": "captureMoored",
+      "context": "vessels.self"
+    },
+    {
+      "path": "navigation.speedOverGround",
+      "enabled": true,
+      "regimen": "",
+      "context": "vessels.self"
+    }
+  ],
+  "commands": [
+    {
+      "command": "captureMoored",
+      "path": "commands.captureMoored",
+      "registered": "COMPLETED",
+      "description": "Capture data when moored (position and wind)",
+      "active": false
+    }
+  ]
+}

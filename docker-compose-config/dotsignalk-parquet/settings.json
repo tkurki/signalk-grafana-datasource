@@ -8,6 +8,7 @@
           "options": {
             "logging": false,
             "type": "FileStream",
+            "overrideTimestamp": true,
             "subOptions": {
               "dataType": "NMEA2000JS",
               "overrideTimestamp": true,
@@ -31,8 +32,5 @@
   },
   "courseApi": {
     "apiOnly": false
-  },
-  "security": {
-    "strategy": "./tokensecurity"
   }
 }

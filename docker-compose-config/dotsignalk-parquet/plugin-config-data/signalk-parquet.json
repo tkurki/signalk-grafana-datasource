@@ -1,0 +1,22 @@
+{
+  "configuration": {
+    "bufferSize": 1000,
+    "saveIntervalSeconds": 30,
+    "outputDirectory": "",
+    "filenamePrefix": "signalk_data",
+    "fileFormat": "parquet",
+    "retentionDays": 7,
+    "s3Upload": {
+      "enabled": false,
+      "timing": "consolidation",
+      "bucket": "",
+      "region": "us-east-1",
+      "keyPrefix": "",
+      "accessKeyId": "",
+      "secretAccessKey": "",
+      "deleteAfterUpload": false
+    }
+  },
+  "enabled": true,
+  "enableDebug": false
+}
