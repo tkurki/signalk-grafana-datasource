@@ -1,0 +1,27 @@
+services:
+  signalk:
+    image: "signalk/signalk-server:latest"
+    ports:
+     - "3001:3000"
+    volumes:
+     - "./docker-compose-config/dotsignalk-parquet:/home/node/.signalk"
+    entrypoint: /home/node/.signalk/start.sh
+  grafana:
+    image: "grafana/grafana:11.2.1"
+    ports:
+     - "3000:3000"
+    volumes:
+     - "./dist:/var/lib/grafana/plugins/sk-datasource"
+     - "./provisioning/datasources:/etc/grafana/provisioning/datasources"
+     - "./provisioning/dashboards:/etc/grafana/provisioning/dashboards"
+    depends_on:
+     - signalk
+    environment:
+    - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=tkurki-signalk-datasource
+    - NODE_ENV=development
+    - GF_LOG_FILTERS=plugin.tkurki-signalk-datasource:debug
+    - GF_LOG_LEVEL=debug
+    - GF_DATAPROXY_LOGGING=1
+    - GF_AUTH_ANONYMOUS_ENABLED=true
+    - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    - GF_AUTH_ANONYMOUS_ORG=1

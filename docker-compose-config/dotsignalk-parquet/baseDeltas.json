@@ -1,0 +1,18 @@
+[
+  {
+    "context": "vessels.self",
+    "updates": [
+      {
+        "values": [
+          {
+            "path": "",
+            "value": {
+              "uuid": "urn:mrn:signalk:uuid:f0a9c83e-d1be-4769-a8c5-59c3b722b721",
+              "name": "Parquet Test"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
