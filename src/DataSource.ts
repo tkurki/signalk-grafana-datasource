@@ -179,7 +179,8 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
         const seriesConversions = enabledTargets.map(getConversion);
         if (result) {
           result.data.forEach((row: number[]) => {
-            const rowToInsert = row.slice(1).map((value, i) => seriesConversions[i](value));
+//            const rowToInsert = row.slice(1).map((value, i) => seriesConversions[i](value));
+            const rowToInsert = seriesConversions.map((conversion, i) => conversion(row[i + 1]));
             const ts = new Date(row[0]);
             (rowToInsert as any[]).unshift(ts);
             dataframe.appendRow(rowToInsert);
