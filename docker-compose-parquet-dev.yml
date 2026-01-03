@@ -1,5 +1,6 @@
 services:
   signalk:
+    container_name: gds-signalk
     image: "signalk/signalk-server:latest"
     ports:
      - "3001:3000"
@@ -7,6 +8,7 @@ services:
      - "./docker-compose-config/dotsignalk-parquet:/home/node/.signalk"
     entrypoint: /home/node/.signalk/start.sh
   grafana:
+    container_name: gds-grafana
     image: "grafana/grafana:11.2.1"
     ports:
      - "3000:3000"
