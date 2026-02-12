@@ -71,22 +71,26 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
   }
 
   ensureWsIsOpen() {
-    if (this.ws) {
-      return;
-    }
-    this.ws = new ReconnectingWebsocket(this.getWebsocketUrl());
-    this.ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.updates) {
-        msg.updates.forEach((update: any) => {
-          if (update.values) {
-            update.values.forEach((pathValue: any) => {
-              this.pathValueHandlers.forEach((handler) => handler(pathValue, update));
-            });
-          }
-        });
+    try {
+      if (this.ws) {
+        return;
       }
-    };
+      this.ws = new ReconnectingWebsocket(this.getWebsocketUrl());
+      this.ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.updates) {
+          msg.updates.forEach((update: any) => {
+            if (update.values) {
+              update.values.forEach((pathValue: any) => {
+                this.pathValueHandlers.forEach((handler) => handler(pathValue, update));
+              });
+            }
+          });
+        }
+      };
+    } catch (e: any) {
+      console.warn('WebSocket connection failed:', e.message);
+    }
   }
 
   getProxyName() {
@@ -94,7 +98,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
   }
 
   getWebsocketUrl() {
-    return `ws${window.location.protocol === 'https' ? 's' : ''}://${window.location.host}${this.url
+    return `ws${window.location.protocol === 'https:' ? 's' : ''}://${window.location.host}${this.url
       }/${this.getProxyName()}/signalk/v1/stream`;
   }
 
