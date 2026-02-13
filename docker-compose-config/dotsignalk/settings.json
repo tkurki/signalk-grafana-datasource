@@ -11,7 +11,7 @@
             "subOptions": {
               "dataType": "NMEA2000JS",
               "overrideTimestamp": true,
-              "filename": "/usr/lib/node_modules/signalk-server/samples/aava-n2k.data"
+              "filename": "/home/node/signalk/node_modules/signalk-server/samples/aava-n2k.data"
             }
           }
         }
