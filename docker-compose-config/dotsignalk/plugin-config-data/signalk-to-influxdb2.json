@@ -22,5 +22,6 @@
       }
     ]
   },
-  "enabled": true
+  "enabled": true,
+  "enableDebug": true
 }

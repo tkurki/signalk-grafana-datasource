@@ -8,5 +8,6 @@
       "charts": true
     },
     "custom": []
-  }
+  },
+  "enabled": true
 }
