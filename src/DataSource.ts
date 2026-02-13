@@ -210,13 +210,16 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
       throw new Error('Valid range and intervalMs required');
     }
     const queryParams: { [k: string]: string } = {
-      //FIXME what if targets have different contexts
-      context: enabledTargets[0]?.context || 'vessels.self',
       paths,
       from: range.from.toISOString(),
       to: range.to.toISOString(),
       resolution: (intervalMs / 1000).toString(),
     };
+    //FIXME what if targets have different contexts
+    if (enabledTargets[0]?.context && enabledTargets[0].context !== 'vessels.self') {
+      queryParams.context = enabledTargets[0].context;
+    };
+
     return urlWithQueryParams(this.getHistoryUrlBase(), queryParams);
   }
 
