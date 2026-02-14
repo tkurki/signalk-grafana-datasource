@@ -5,6 +5,6 @@
   "repository": {},
   "license": "Apache-2.0",
   "dependencies": {
-    "signalk-to-influxdb2": "^1.12.1"
+    "signalk-to-influxdb2": "^2.0.0"
   }
 }
