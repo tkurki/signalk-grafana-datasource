@@ -201,7 +201,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
   }
 
   getHistoryUrlBase() {
-    return `${this.url}/${this.getProxyName()}/signalk/v2/history/values?`;
+    return `${this.url}/${this.getProxyName()}/signalk/v2/api/history/values?`;
   }
 
   getHistoryUrl(enabledTargets: SignalKQuery[], range: TimeRange, intervalMs: number) {
@@ -328,7 +328,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
     if (context) {
       queryParams.context = context;
     }
-    return urlWithQueryParams(`${this.url}/historyapi/signalk/v2/history/paths?`, queryParams);
+    return urlWithQueryParams(`${this.url}/historyapi/signalk/v2/api/history/paths?`, queryParams);
   }
 
   fetchContexts(range: TimeRange) {
@@ -344,7 +344,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
     if (!range) {
       throw new Error('Valid range required for fetching contexts');
     }
-    return urlWithQueryParams(`${this.url}/historyapi/signalk/v2/history/contexts?`, {
+    return urlWithQueryParams(`${this.url}/historyapi/signalk/v2/api/history/contexts?`, {
       from: range.from.toISOString(),
       to: range.to.toISOString(),
     });
