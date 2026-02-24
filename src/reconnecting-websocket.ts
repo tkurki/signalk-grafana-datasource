@@ -178,9 +178,12 @@ export default class ReconnectingWebSocket {
     return false;
   }
 
+  // private log(...args: any) {
+  //   if (this.debug || ReconnectingWebSocket.debugAll) {
+  //     console.log.apply(console, args);
+  //   }
+  // }
+
   private log(...args: any) {
-    if (this.debug || ReconnectingWebSocket.debugAll) {
-      console.log.apply(console, args);
-    }
   }
 }

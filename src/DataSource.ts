@@ -196,7 +196,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
         }
       })
       .catch((err) => {
-        console.error(err);
+        console.error(err.message);
       });
   }
 
@@ -230,7 +230,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
         try {
           ws.close();
         } catch (e) {
-          console.error(e);
+          console.error(e.message);
         }
         //if resolved already has no effect
         reject('WebSocket timeout');
@@ -315,7 +315,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
         });
       })
       .catch((err) => {
-        console.error(err);
+        console.error(err.message);
         return [];
       });
   }
