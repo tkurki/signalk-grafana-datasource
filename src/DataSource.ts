@@ -24,6 +24,12 @@ interface PathValue {
 
 type PathValueHandler = (pv: PathValue, update: any) => void;
 
+interface Subscription {
+  context: string;
+  path: string;
+  refCount: number;
+}
+
 interface HistoryResult {
   context: string;
   values: Array<{ path: string; method: string; source: string | null }>;
@@ -41,6 +47,10 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
   listeners: QueryListener[] = [];
   pathValueHandlers: PathValueHandler[] = [];
   wsRefCount = 0;
+  // Desired stream subscriptions, keyed by `${context}.${path}`, ref-counted by active panels.
+  subscriptions: Map<string, Subscription> = new Map();
+  // Keys already sent into the currently open WebSocket (reset on (re)connect).
+  sentSubscriptions: Set<string> = new Set();
 
   ws?: ReconnectingWebsocket;
   url?: string | undefined;
@@ -74,6 +84,55 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
     }
   }
 
+  addSubscriptions(targets: SignalKQuery[]) {
+    targets.forEach((target) => {
+      const context = target.context || 'vessels.self';
+      const key = subscriptionKey(context, target.path);
+      const existing = this.subscriptions.get(key);
+      if (existing) {
+        existing.refCount++;
+      } else {
+        this.subscriptions.set(key, { context, path: target.path, refCount: 1 });
+      }
+    });
+    this.sendPendingSubscriptions();
+  }
+
+  removeSubscriptions(targets: SignalKQuery[]) {
+    targets.forEach((target) => {
+      const context = target.context || 'vessels.self';
+      const key = subscriptionKey(context, target.path);
+      const existing = this.subscriptions.get(key);
+      if (existing && --existing.refCount <= 0) {
+        this.subscriptions.delete(key);
+        this.sentSubscriptions.delete(key);
+      }
+    });
+  }
+
+  // Send subscribe messages for any desired subscriptions not yet sent into the open socket.
+  sendPendingSubscriptions() {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+    const pathsByContext: { [context: string]: string[] } = {};
+    this.subscriptions.forEach((sub, key) => {
+      if (!this.sentSubscriptions.has(key)) {
+        (pathsByContext[sub.context] = pathsByContext[sub.context] || []).push(sub.path);
+      }
+    });
+    Object.keys(pathsByContext).forEach((context) => {
+      const paths = pathsByContext[context];
+      this.ws!.send(
+        JSON.stringify({
+          context,
+          subscribe: paths.map((path) => ({ path })),
+        })
+      );
+      paths.forEach((path) => this.sentSubscriptions.add(subscriptionKey(context, path)));
+    });
+  }
+
   acquireWs() {
     this.wsRefCount++;
     this.ensureWsIsOpen();
@@ -98,7 +157,12 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
       if (this.ws) {
         return;
       }
-      this.ws = new ReconnectingWebsocket(this.getWebsocketUrl());
+      this.ws = new ReconnectingWebsocket(`${this.getWebsocketUrl()}?subscribe=none`);
+      // On every (re)connect the server has no subscriptions, so resend all desired ones.
+      this.ws.onopen = () => {
+        this.sentSubscriptions.clear();
+        this.sendPendingSubscriptions();
+      };
       this.ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.updates) {
@@ -173,6 +237,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
         }
         handlers.forEach((handler) => this.addPathValueHandler(handler));
         this.acquireWs();
+        this.addSubscriptions(enabledTargets);
         //if there are no updates advance the time with timer
         idleInterval = setInterval(() => {
           if (Date.now() - lastStreamingValueTimestamp > options.intervalMs) {
@@ -188,6 +253,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
           return;
         }
         handlers.forEach((handler) => this.removePathValueHandler(handler));
+        this.removeSubscriptions(enabledTargets);
         if (idleInterval) {
           clearInterval(idleInterval);
           idleInterval = undefined;
@@ -408,6 +474,8 @@ const getSourceId = (source: any): string => {
 };
 
 const rangeIsUptoNow = (rangeRaw?: RawTimeRange) => rangeRaw && rangeRaw.to === 'now';
+
+const subscriptionKey = (context: string, path: string) => `${context}.${path}`;
 
 const pathValueHandler = (
   query: SignalKQuery,
