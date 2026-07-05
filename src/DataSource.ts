@@ -40,7 +40,7 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
   useAuth: boolean;
   listeners: QueryListener[] = [];
   pathValueHandlers: PathValueHandler[] = [];
-  idleInterval?: number;
+  wsRefCount = 0;
 
   ws?: ReconnectingWebsocket;
   url?: string | undefined;
@@ -60,6 +60,29 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
     const index = this.listeners.indexOf(listener);
     if (index > -1) {
       this.listeners.splice(index, 1);
+    }
+  }
+
+  addPathValueHandler(handler: PathValueHandler) {
+    this.pathValueHandlers.push(handler);
+  }
+
+  removePathValueHandler(handler: PathValueHandler) {
+    const index = this.pathValueHandlers.indexOf(handler);
+    if (index > -1) {
+      this.pathValueHandlers.splice(index, 1);
+    }
+  }
+
+  acquireWs() {
+    this.wsRefCount++;
+    this.ensureWsIsOpen();
+  }
+
+  releaseWs() {
+    this.wsRefCount = Math.max(0, this.wsRefCount - 1);
+    if (this.wsRefCount === 0) {
+      this.closeWs();
     }
   }
 
@@ -105,11 +128,6 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
   query(options: DataQueryRequest<SignalKQuery>): Observable<DataQueryResponse> {
     this.listeners.forEach((l) => l.onQuery(options));
 
-    if (this.idleInterval) {
-      clearInterval(this.idleInterval);
-      this.idleInterval = undefined;
-    }
-
     const result = new Subject<DataQueryResponse>();
     let lastStreamingValueTimestamp = 0;
 
@@ -133,23 +151,12 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
       });
     };
 
-    this.pathValueHandlers = !rangeIsUptoNow(options.rangeRaw)
-      ? []
-      : enabledTargets.map((target, i) => pathValueHandler(target, dataframe, i, onDataInserted));
+    const isStreaming = rangeIsUptoNow(options.rangeRaw);
+    const handlers: PathValueHandler[] = isStreaming
+      ? enabledTargets.map((target, i) => pathValueHandler(target, dataframe, i, onDataInserted))
+      : [];
 
-    if (rangeIsUptoNow(options.rangeRaw)) {
-      this.ensureWsIsOpen();
-
-      //if there are no updates advance the time with timer
-      this.idleInterval = setInterval(() => {
-        if (Date.now() - lastStreamingValueTimestamp > options.intervalMs) {
-          result.next({
-            data: [dataframe],
-            state: LoadingState.Streaming,
-          });
-        }
-      }, options.intervalMs) as unknown as number;
-    }
+    let idleInterval: number | undefined;
 
     result.next({
       data: [dataframe],
@@ -160,8 +167,33 @@ export class DataSource extends DataSourceApi<SignalKQuery, SignalKDataSourceOpt
 
     return onFirstLastSubscribers(
       result,
-      () => this.ensureWsIsOpen(),
-      () => this.closeWs()
+      () => {
+        if (!isStreaming) {
+          return;
+        }
+        handlers.forEach((handler) => this.addPathValueHandler(handler));
+        this.acquireWs();
+        //if there are no updates advance the time with timer
+        idleInterval = setInterval(() => {
+          if (Date.now() - lastStreamingValueTimestamp > options.intervalMs) {
+            result.next({
+              data: [dataframe],
+              state: LoadingState.Streaming,
+            });
+          }
+        }, options.intervalMs) as unknown as number;
+      },
+      () => {
+        if (!isStreaming) {
+          return;
+        }
+        handlers.forEach((handler) => this.removePathValueHandler(handler));
+        if (idleInterval) {
+          clearInterval(idleInterval);
+          idleInterval = undefined;
+        }
+        this.releaseWs();
+      }
     );
   }
 
