@@ -40,3 +40,10 @@ ci/
 docker-compose-config/data/
 *.zip
 signalk-datasource/
+
+docker-compose-config/dotsignalk/plugin-config-data/course-provider.json
+docker-compose-config/dotsignalk/plugin-config-data/freeboard-sk.json
+docker-compose-config/dotsignalk/plugin-config-data/kip.json
+docker-compose-config/dotsignalk/plugin-config-data/kip/
+docker-compose-config/dotsignalk/plugin-config-data/signalk-app-dock.json
+docker-compose-config/dotsignalk/unitpreferences/
