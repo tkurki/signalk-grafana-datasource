@@ -62,8 +62,10 @@ export class QueryEditor extends PureComponent<Props, State> {
     });
     this.props.datasource
       .fetchPaths(this.props.range || getDefaultTimeRange(), this.state?.context)
-      .then((paths) => this.setState({ paths }))
-      .then(() => this.updateConversions());
+      .then((paths) => {
+        this.setState({ paths });
+        this.updateConversions(paths);
+      });
   }
 
   componentDidMount() {
@@ -80,8 +82,8 @@ export class QueryEditor extends PureComponent<Props, State> {
     }
   }
 
-  updateConversions() {
-    const pWm = (this.state?.paths || []).find((pWm) => pWm.path === this.props.query.path)
+  updateConversions(paths?: PathWithMeta[]) {
+    const pWm = (paths || this.state?.paths || []).find((pWm) => pWm.path === this.props.query.path)
     if (pWm) {
       pWm.meta().then(meta => {
         this.setState({ meta, conversions: getUnitConversions((meta?.units || '') as unknown as Unit) })
